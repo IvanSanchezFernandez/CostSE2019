@@ -1,0 +1,1024 @@
+
+# COST OF STATUS EPILEPTICUS: NIS 2016
+
+
+
+
+
+
+
+
+## 1. Preparation of sowtware for analysis
+
+
+
+
+Install needed packages
+```{r}
+# install.packages("readr")
+library(readr)
+
+# install.packages("gmodels")
+library(gmodels)
+
+# install.packages("tidyverse")
+library(tidyverse)
+
+# install.packages("qdapRegex")
+library(qdapRegex)
+
+# install.packages("survey")
+library(survey)
+```
+
+
+
+
+Increase memory limit to deal with huge databases
+```{r}
+memory.limit()
+memory.limit(size=56000)
+memory.limit()
+```
+
+
+
+
+
+
+
+
+## 2. Data ingestion 
+
+
+
+
+NIS 2016 Core file
+```{r}
+## NIS 2016 CORE
+# Read in the text file according to the columns described in the text file
+NIS2016CORESPECIFICATIONS <- read_fwf('G:\\HCUP2016unzipped\\NIS2016\\NIS_2016_Core\\FileSpecifications_NIS_2016_Core.TXT', 
+               fwf_positions(start = c(1, 5, 10, 37, 41, 71, 75, 79, 81, 86), 
+                             end = c(3, 8, 35, 39, 69, 73, 77, 79, 84, 185)),
+               skip = 20) ## This skip step skips the initial lines and the columns descriptions
+
+# Define the column names according to the columns described in the text file
+colnames(NIS2016CORESPECIFICATIONS) <- c('Database name', 'Discharge year of data', 'File name', 'Data element number', 'Data element name', 'Starting column of data element in ASCII file', 'Ending column of data element in ASCII file', 'Non-zero number of digits after decimal point for numeric data element', 'Data element type (Num=numeric; Char=character)', 'Data element label')
+
+## NIS 2016 CORE
+# Read in the database
+NIS2016COREDATABASE <- read_fwf('G:\\HCUP2016unzipped\\NIS2016\\NIS_2016_Core\\NIS_2016_Core.ASC', 
+               fwf_positions(start = NIS2016CORESPECIFICATIONS$`Starting column of data element in ASCII file`, 
+                             end = NIS2016CORESPECIFICATIONS$`Ending column of data element in ASCII file`, 
+                             col_names = NIS2016CORESPECIFICATIONS$`Data element name`))
+```
+
+
+
+
+NIS 2016 Hospital file
+```{r}
+## NIS 2016 HOSPITAL
+# Read in the text file according to the columns described in the text file
+NIS2016HOSPITALSPECIFICATIONS <- read_fwf('G:\\HCUP2016unzipped\\NIS2016\\NIS_2016_Hospital\\FileSpecifications_NIS_2016_Hospital.TXT', 
+               fwf_positions(start = c(1, 5, 10, 37, 41, 71, 75, 79, 81, 86), 
+                             end = c(3, 8, 35, 39, 69, 73, 77, 79, 84, 185)),
+               skip = 20) ## This skip step skips the initial lines and the columns descriptions
+
+# Define the column names according to the columns described in the text file
+colnames(NIS2016HOSPITALSPECIFICATIONS) <- c('Database name', 'Discharge year of data', 'File name', 'Data element number', 'Data element name', 'Starting column of data element in ASCII file', 'Ending column of data element in ASCII file', 'Non-zero number of digits after decimal point for numeric data element', 'Data element type (Num=numeric; Char=character)', 'Data element label')
+
+## NIS 2016 HOSPITAL
+# Read in the database
+NIS2016HOSPITALDATABASE <- read_fwf('G:\\HCUP2016unzipped\\NIS2016\\NIS_2016_Hospital\\NIS_2016_Hospital.ASC', 
+               fwf_positions(start = NIS2016HOSPITALSPECIFICATIONS$`Starting column of data element in ASCII file`, 
+                             end = NIS2016HOSPITALSPECIFICATIONS$`Ending column of data element in ASCII file`, 
+                             col_names = NIS2016HOSPITALSPECIFICATIONS$`Data element name`))
+```
+
+
+
+
+NIS 2016 Severity file
+```{r}
+## NIS 2016 SEVERITY
+# Read in the text file according to the columns described in the text file
+NIS2016SEVERITYSPECIFICATIONS <- read_fwf('G:\\HCUP2016unzipped\\NIS2016\\NIS_2016_Severity\\FileSpecifications_NIS_2016_Severity.TXT', 
+               fwf_positions(start = c(1, 5, 10, 37, 41, 71, 75, 79, 81, 86), 
+                             end = c(3, 8, 35, 39, 69, 73, 77, 79, 84, 185)),
+               skip = 20) ## This skip step skips the initial lines and the columns descriptions
+
+# Define the column names according to the columns described in the text file
+colnames(NIS2016SEVERITYSPECIFICATIONS) <- c('Database name', 'Discharge year of data', 'File name', 'Data element number', 'Data element name', 'Starting column of data element in ASCII file', 'Ending column of data element in ASCII file', 'Non-zero number of digits after decimal point for numeric data element', 'Data element type (Num=numeric; Char=character)', 'Data element label')
+
+## NIS 2016 SEVERITY
+# Read in the database
+NIS2016SEVERITYDATABASE <- read_fwf('G:\\HCUP2016unzipped\\NIS2016\\NIS_2016_Severity\\NIS_2016_Severity.ASC', 
+               fwf_positions(start = NIS2016SEVERITYSPECIFICATIONS$`Starting column of data element in ASCII file`, 
+                             end = NIS2016SEVERITYSPECIFICATIONS$`Ending column of data element in ASCII file`, 
+                             col_names = NIS2016SEVERITYSPECIFICATIONS$`Data element name`))
+```
+
+
+
+
+NIS 2016 Cost to charge file
+```{r}
+## NIS 2016 COST TO CHARGE
+# Read in the database
+NIS2016COSTTOCHARGEDATABASE <- read.csv('G:\\HCUP2016unzipped\\NIS2016\\cc2016NIS.csv', header = TRUE)
+
+# Rename columns
+colnames(NIS2016COSTTOCHARGEDATABASE) <- c("HOSP_NIS", "YEAR", "CCR_NIS", "WAGEINDEX")
+
+# Transform HOSP_NIS to numeric
+NIS2016COSTTOCHARGEDATABASE$HOSP_NIS <- as.numeric(as.character(rm_between(NIS2016COSTTOCHARGEDATABASE$HOSP_NIS, "'", "'", extract = TRUE)))
+
+# Transform CCR_NIS to numeric
+NIS2016COSTTOCHARGEDATABASE$CCR_NIS <- as.numeric(as.character(NIS2016COSTTOCHARGEDATABASE$CCR_NIS))
+```
+
+
+
+
+NIS 2016 merge into a single database
+```{r}
+## MERGE
+NIS2016 <- merge(NIS2016COREDATABASE, NIS2016HOSPITALDATABASE, by = c("HOSP_NIS", "YEAR", "NIS_STRATUM", "HOSP_DIVISION", "DISCWT"), all = FALSE)
+NIS2016 <- merge(NIS2016, NIS2016SEVERITYDATABASE, by = c("KEY_NIS", "HOSP_NIS"), all = FALSE)
+NIS2016 <- merge(NIS2016, NIS2016COSTTOCHARGEDATABASE, by = c("HOSP_NIS", "YEAR"), all = FALSE)
+```
+
+
+
+
+
+
+
+
+## 3. Data preparation
+
+
+
+
+Create the variable cost
+```{r}
+# Cost
+NIS2016$COST <- NIS2016$TOTCHG * NIS2016$CCR_NIS
+```
+
+
+
+
+Transform missing values to NA and recode variables for clarity
+```{r}
+# Hospital bedsize
+NIS2016$HOSP_BEDSIZE[NIS2016$HOSP_BEDSIZE == 1] <- "Small"
+NIS2016$HOSP_BEDSIZE[NIS2016$HOSP_BEDSIZE == 2] <- "Medium"
+NIS2016$HOSP_BEDSIZE[NIS2016$HOSP_BEDSIZE == 3] <- "Large"
+
+# Hospital teaching status
+NIS2016$HOSP_LOCTEACH[NIS2016$HOSP_LOCTEACH == 1] <- "Rural"
+NIS2016$HOSP_LOCTEACH[NIS2016$HOSP_LOCTEACH == 2] <- "Urban nonteaching"
+NIS2016$HOSP_LOCTEACH[NIS2016$HOSP_LOCTEACH == 3] <- "Urban teaching"
+
+# Age (valid only from 0 to 124 years according to the HCUP documentation)
+NIS2016$AGE <- ifelse(NIS2016$AGE >= 20 & NIS2016$AGE <= 124, NIS2016$AGE, NA)
+
+# Gender
+NIS2016$FEMALE <- ifelse(NIS2016$FEMALE == 0 | NIS2016$FEMALE == 1, NIS2016$FEMALE, NA)
+
+# Admission month
+NIS2016$AMONTH <- ifelse(NIS2016$AMONTH > 0, NIS2016$AMONTH, NA)
+
+# Admission weekend
+NIS2016$AWEEKEND <- ifelse(NIS2016$AWEEKEND == 0 | NIS2016$AWEEKEND == 1, NIS2016$AWEEKEND, NA)
+
+# Death
+NIS2016$DIED <- ifelse(NIS2016$DIED == 0 | NIS2016$DIED == 1, NIS2016$DIED, NA)
+
+# Disposition
+NIS2016$DISPUNIFORM <- ifelse(NIS2016$DISPUNIFORM > 0, NIS2016$DISPUNIFORM, NA)
+
+NIS2016$DISPUNIFORM[NIS2016$DISPUNIFORM == 1] <- "Home or self care"
+NIS2016$DISPUNIFORM[NIS2016$DISPUNIFORM == 2] <- "Short-term hospital for inpatient care"
+NIS2016$DISPUNIFORM[NIS2016$DISPUNIFORM == 5] <- "Transfer other"
+NIS2016$DISPUNIFORM[NIS2016$DISPUNIFORM == 6] <- "Home health care"
+NIS2016$DISPUNIFORM[NIS2016$DISPUNIFORM == 7] <- "Against medical advice"
+NIS2016$DISPUNIFORM[NIS2016$DISPUNIFORM == 20] <- "Died in hospital"
+NIS2016$DISPUNIFORM[NIS2016$DISPUNIFORM == 99] <- "Discharged alive, destination unknown"
+
+# Elective admission
+NIS2016$ELECTIVE <- ifelse(NIS2016$ELECTIVE == 0 | NIS2016$ELECTIVE == 1, NIS2016$ELECTIVE, NA)
+
+# Emergency department
+NIS2016$HCUP_ED[NIS2016$HCUP_ED == 0] <- "No ED"
+NIS2016$HCUP_ED[NIS2016$HCUP_ED == 1] <- "ED revenue present"
+NIS2016$HCUP_ED[NIS2016$HCUP_ED == 2] <- "ED charge"
+NIS2016$HCUP_ED[NIS2016$HCUP_ED == 3] <- "ED CPT procedure present"
+NIS2016$HCUP_ED[NIS2016$HCUP_ED == 4] <- "ED admission"
+
+NIS2016$EDrecords <- 1
+NIS2016$EDrecords[NIS2016$HCUP_ED == "No ED"] <- 0
+
+# Hospital region
+NIS2016$HOSP_REGION[NIS2016$HOSP_REGION == 1] <- "Northeast"
+NIS2016$HOSP_REGION[NIS2016$HOSP_REGION == 2] <- "Midwest"
+NIS2016$HOSP_REGION[NIS2016$HOSP_REGION == 3] <- "South"
+NIS2016$HOSP_REGION[NIS2016$HOSP_REGION == 4] <- "West"
+
+# Length of stay in days (0 means same day discharge)
+NIS2016$LOS <- ifelse(NIS2016$LOS >= 0, NIS2016$LOS, NA)
+
+# Primary expected payer
+NIS2016$PAY1 <- ifelse(NIS2016$PAY1 > 0, NIS2016$PAY1, NA)
+
+NIS2016$PAY1[NIS2016$PAY1 == 1] <- "Medicare"
+NIS2016$PAY1[NIS2016$PAY1 == 2] <- "Medicaid"
+NIS2016$PAY1[NIS2016$PAY1 == 3] <- "Private insurance"
+NIS2016$PAY1[NIS2016$PAY1 == 4] <- "Self-pay"
+NIS2016$PAY1[NIS2016$PAY1 == 5] <- "No charge"
+NIS2016$PAY1[NIS2016$PAY1 == 6] <- "Other"
+
+# Patient location
+NIS2016$PL_NCHS <- ifelse(NIS2016$PL_NCHS > 0, NIS2016$PL_NCHS, NA)
+
+NIS2016$PL_NCHS[NIS2016$PL_NCHS == 1] <- "Central metro area >= 1M"
+NIS2016$PL_NCHS[NIS2016$PL_NCHS == 2] <- "Fringe metro area >= 1M"
+NIS2016$PL_NCHS[NIS2016$PL_NCHS == 3] <- "250000 - 999999"
+NIS2016$PL_NCHS[NIS2016$PL_NCHS == 4] <- "50000 - 249999"
+NIS2016$PL_NCHS[NIS2016$PL_NCHS == 5] <- "Micropolitan"
+NIS2016$PL_NCHS[NIS2016$PL_NCHS == 6] <- "Not metropolitan or micropolitan"
+
+NIS2016$PL_NCHS <- ordered(NIS2016$PL_NCHS, levels = c("Central metro area >= 1M", "Fringe metro area >= 1M", "250000 - 999999", "50000 - 249999", "Micropolitan", "Not metropolitan or micropolitan"))
+
+# Race
+NIS2016$RACE <- ifelse(NIS2016$RACE > 0, NIS2016$RACE, NA)
+
+NIS2016$RACE[NIS2016$RACE == 1] <- "White"
+NIS2016$RACE[NIS2016$RACE == 2] <- "Black"
+NIS2016$RACE[NIS2016$RACE == 3] <- "Hispanic"
+NIS2016$RACE[NIS2016$RACE == 4] <- "Asian or Pacific Islander"
+NIS2016$RACE[NIS2016$RACE == 5] <- "Native American"
+NIS2016$RACE[NIS2016$RACE == 6] <- "Other"
+
+# Income
+NIS2016$ZIPINC_QRTL <- ifelse(NIS2016$ZIPINC_QRTL > 0, NIS2016$ZIPINC_QRTL, NA)
+
+NIS2016$ZIPINC_QRTL[NIS2016$ZIPINC_QRTL == 1] <- "First quartile"
+NIS2016$ZIPINC_QRTL[NIS2016$ZIPINC_QRTL == 2] <- "Second quartile"
+NIS2016$ZIPINC_QRTL[NIS2016$ZIPINC_QRTL == 3] <- "Third quartile"
+NIS2016$ZIPINC_QRTL[NIS2016$ZIPINC_QRTL == 4] <- "Fourth quartile"
+
+NIS2016$ZIPINC_QRTL <- ordered(NIS2016$ZIPINC_QRTL, levels = c("First quartile", "Second quartile", "Third quartile", "Fourth quartile"))
+
+# Risk of mortality
+NIS2016$APRDRG_Risk_Mortality <- ifelse(NIS2016$APRDRG_Risk_Mortality > 0, NIS2016$APRDRG_Risk_Mortality, NA)
+
+NIS2016$APRDRG_Risk_Mortality[NIS2016$APRDRG_Risk_Mortality == 1] <- "Minor"
+NIS2016$APRDRG_Risk_Mortality[NIS2016$APRDRG_Risk_Mortality == 2] <- "Moderate"
+NIS2016$APRDRG_Risk_Mortality[NIS2016$APRDRG_Risk_Mortality == 3] <- "Major"
+NIS2016$APRDRG_Risk_Mortality[NIS2016$APRDRG_Risk_Mortality == 4] <- "Extreme"
+
+NIS2016$APRDRG_Risk_Mortality <- ordered(NIS2016$APRDRG_Risk_Mortality, levels = c("Minor", "Moderate", "Major", "Extreme"))
+
+# Severity of disease
+NIS2016$APRDRG_Severity <- ifelse(NIS2016$APRDRG_Severity > 0, NIS2016$APRDRG_Severity, NA)
+
+NIS2016$APRDRG_Severity[NIS2016$APRDRG_Severity == 1] <- "Minor"
+NIS2016$APRDRG_Severity[NIS2016$APRDRG_Severity == 2] <- "Moderate"
+NIS2016$APRDRG_Severity[NIS2016$APRDRG_Severity == 3] <- "Major"
+NIS2016$APRDRG_Severity[NIS2016$APRDRG_Severity == 4] <- "Extreme"
+
+NIS2016$APRDRG_Severity <- ordered(NIS2016$APRDRG_Severity, levels = c("Minor", "Moderate", "Major", "Extreme"))
+
+# Race dichotomized
+NIS2016$race_dichotomized[NIS2016$RACE == "White"] <- "White"
+NIS2016$race_dichotomized[NIS2016$RACE != "White"] <- "Non-white"
+
+# Income dichotomized
+NIS2016$high_income[NIS2016$ZIPINC_QRTL == "First quartile" | NIS2016$ZIPINC_QRTL == "Second quartile"] <- 0
+NIS2016$high_income[NIS2016$ZIPINC_QRTL == "Third quartile" | NIS2016$ZIPINC_QRTL == "Fourth quartile"] <- 1
+
+# Disease severity dichotomized
+NIS2016$majorextremeseverity[NIS2016$APRDRG_Severity == "Minor" | NIS2016$APRDRG_Severity == "Moderate"] <- 0 
+NIS2016$majorextremeseverity[NIS2016$APRDRG_Severity == "Major" | NIS2016$APRDRG_Severity == "Extreme"] <- 1 
+
+# Mortality risk dichotomized
+NIS2016$majorextrememortalityrisk[NIS2016$APRDRG_Risk_Mortality == "Minor" | NIS2016$APRDRG_Risk_Mortality == "Moderate"] <- 0 
+NIS2016$majorextrememortalityrisk[NIS2016$APRDRG_Risk_Mortality == "Major" | NIS2016$APRDRG_Risk_Mortality == "Extreme"] <- 1 
+
+# Expected primary payer
+NIS2016$private_insurance <- 0
+NIS2016$private_insurance[NIS2016$PAY1 == "Private insurance"] <- 1
+
+# Cost
+NIS2016$COST <- ifelse(NIS2016$COST >= 0, NIS2016$COST, NA)
+```
+
+
+
+
+Eliminate admissions with missing crucial information
+```{r}
+# ELIMINATE ADMISSIONS WITH NO INFORMATION ON AGE
+NIS2016 <- NIS2016[!is.na(NIS2016$AGE), ]
+  
+# ELIMINATE ADMISSIONS WITH NO INFORMATION ON GENDER
+NIS2016 <- NIS2016[!is.na(NIS2016$FEMALE), ]
+
+# ELIMINATE ADMISSIONS WITH NO INFORMATION ON LENGHT OF STAY
+NIS2016 <- NIS2016[!is.na(NIS2016$LOS), ] 
+
+# ELIMINATE ADMISSIONS WITH NO INFORMATION ON DEATH
+NIS2016 <- NIS2016[!is.na(NIS2016$DIED), ] 
+
+# ELIMINATE ADMISSIONS WITH NO INFORMATION ON COST
+NIS2016 <- NIS2016[!is.na(NIS2016$COST), ]
+```
+
+
+
+
+Find status epilepticus and status epilepticus categories
+```{r}
+# Create variable status epilepticus if G40301 or G40311 in any diagnostic code
+NIS2016$SE <- 0 
+NIS2016$SE[NIS2016$I10_DX1 == "G40301" | NIS2016$I10_DX1 == "G40311" | 
+                          NIS2016$I10_DX2 == "G40301" | NIS2016$I10_DX2 == "G40311" |
+                          NIS2016$I10_DX3 == "G40301" | NIS2016$I10_DX3 == "G40311" |
+                          NIS2016$I10_DX4 == "G40301" | NIS2016$I10_DX4 == "G40311" |
+                          NIS2016$I10_DX5 == "G40301" | NIS2016$I10_DX5 == "G40311" |
+                          NIS2016$I10_DX6 == "G40301" | NIS2016$I10_DX6 == "G40311" |
+                          NIS2016$I10_DX7 == "G40301" | NIS2016$I10_DX7 == "G40311" |
+                          NIS2016$I10_DX8 == "G40301" | NIS2016$I10_DX8 == "G40311" |
+                          NIS2016$I10_DX9 == "G40301" | NIS2016$I10_DX9 == "G40311" |
+                          NIS2016$I10_DX10 == "G40301" | NIS2016$I10_DX10 == "G40311" |
+                          NIS2016$I10_DX11 == "G40301" | NIS2016$I10_DX11 == "G40311" |
+                          NIS2016$I10_DX12 == "G40301" | NIS2016$I10_DX12 == "G40311" |
+                          NIS2016$I10_DX13 == "G40301" | NIS2016$I10_DX13 == "G40311" |
+                          NIS2016$I10_DX14 == "G40301" | NIS2016$I10_DX14 == "G40311" |
+                          NIS2016$I10_DX15 == "G40301" | NIS2016$I10_DX15 == "G40311" |
+                          NIS2016$I10_DX16 == "G40301" | NIS2016$I10_DX16 == "G40311" |
+                          NIS2016$I10_DX17 == "G40301" | NIS2016$I10_DX17 == "G40311" |
+                          NIS2016$I10_DX18 == "G40301" | NIS2016$I10_DX18 == "G40311" |
+                          NIS2016$I10_DX19 == "G40301" | NIS2016$I10_DX19 == "G40311" |
+                          NIS2016$I10_DX20 == "G40301" | NIS2016$I10_DX20 == "G40311" |
+                          NIS2016$I10_DX21 == "G40301" | NIS2016$I10_DX21 == "G40311" |
+                          NIS2016$I10_DX22 == "G40301" | NIS2016$I10_DX22 == "G40311" |
+                          NIS2016$I10_DX23 == "G40301" | NIS2016$I10_DX23 == "G40311" |
+                          NIS2016$I10_DX24 == "G40301" | NIS2016$I10_DX24 == "G40311" |
+                          NIS2016$I10_DX25 == "G40301" | NIS2016$I10_DX25 == "G40311" |
+                          NIS2016$I10_DX26 == "G40301" | NIS2016$I10_DX26 == "G40311" |
+                          NIS2016$I10_DX27 == "G40301" | NIS2016$I10_DX27 == "G40311" |
+                          NIS2016$I10_DX28 == "G40301" | NIS2016$I10_DX28 == "G40311" |
+                          NIS2016$I10_DX29 == "G40301" | NIS2016$I10_DX29 == "G40311" |
+                          NIS2016$I10_DX30 == "G40301" | NIS2016$I10_DX30 == "G40311"] <- 1
+
+# Mechanical ventilation less than 24 hours 5A1935Z
+NIS2016$ventless24h <- 0
+NIS2016$ventless24h[NIS2016$I10_PR1 == "5A1935Z" | NIS2016$I10_PR2 == "5A1935Z" | 
+                                NIS2016$I10_PR3 == "5A1935Z" | NIS2016$I10_PR4 == "5A1935Z" |
+                                NIS2016$I10_PR5 == "5A1935Z" | NIS2016$I10_PR6 == "5A1935Z" |
+                                NIS2016$I10_PR7 == "5A1935Z" | NIS2016$I10_PR8 == "5A1935Z" |
+                                NIS2016$I10_PR9 == "5A1935Z" | NIS2016$I10_PR10 == "5A1935Z" |
+                                NIS2016$I10_PR11 == "5A1935Z" | NIS2016$I10_PR12 == "5A1935Z" |
+                                NIS2016$I10_PR13 == "5A1935Z" | NIS2016$I10_PR14 == "5A1935Z" |
+                                NIS2016$I10_PR15 == "5A1935Z"] <- 1
+
+# Mechanical ventilation 24-96 hours 5A1945Z
+NIS2016$vent24h96h <- 0
+NIS2016$vent24h96h[NIS2016$I10_PR1 == "5A1945Z" | NIS2016$I10_PR2 == "5A1945Z" | 
+                                NIS2016$I10_PR3 == "5A1945Z" | NIS2016$I10_PR4 == "5A1945Z" |
+                                NIS2016$I10_PR5 == "5A1945Z" | NIS2016$I10_PR6 == "5A1945Z" |
+                                NIS2016$I10_PR7 == "5A1945Z" | NIS2016$I10_PR8 == "5A1945Z" |
+                                NIS2016$I10_PR9 == "5A1945Z" | NIS2016$I10_PR10 == "5A1945Z" |
+                                NIS2016$I10_PR11 == "5A1945Z" | NIS2016$I10_PR12 == "5A1945Z" |
+                                NIS2016$I10_PR13 == "5A1945Z" | NIS2016$I10_PR14 == "5A1945Z" |
+                                NIS2016$I10_PR15 == "5A1945Z"] <- 1
+
+# Mechanical ventilation up to 96 hours
+NIS2016$ventupto96h <- 0
+NIS2016$ventupto96h[NIS2016$ventless24h == 1 | NIS2016$vent24h96h == 1] <- 1
+
+# Mechanical ventilation more than 96 hours 5A1955Z
+NIS2016$ventmore96h <- 0
+NIS2016$ventmore96h[NIS2016$I10_PR1 == "5A1955Z" | NIS2016$I10_PR2 == "5A1955Z" | 
+                                NIS2016$I10_PR3 == "5A1955Z" | NIS2016$I10_PR4 == "5A1955Z" |
+                                NIS2016$I10_PR5 == "5A1955Z" | NIS2016$I10_PR6 == "5A1955Z" |
+                                NIS2016$I10_PR7 == "5A1955Z" | NIS2016$I10_PR8 == "5A1955Z" |
+                                NIS2016$I10_PR9 == "5A1955Z" | NIS2016$I10_PR10 == "5A1955Z" |
+                                NIS2016$I10_PR11 == "5A1955Z" | NIS2016$I10_PR12 == "5A1955Z" |
+                                NIS2016$I10_PR13 == "5A1955Z" | NIS2016$I10_PR14 == "5A1955Z" |
+                                NIS2016$I10_PR15 == "5A1955Z"] <- 1
+```
+
+
+
+
+Create the survey object
+```{r}
+# SURVEY OBJECT
+NIS2016survey <- svydesign(id = ~ HOSP_NIS, strata = ~ NIS_STRATUM, weights = ~ DISCWT, data = NIS2016, nest = TRUE)
+```
+
+
+
+
+
+
+
+
+## 4. Demographics and clinical characteristics
+
+
+
+
+Demographic and clinical characteristics
+```{r}
+# Dimensions of the unweighted database
+dim(NIS2016)
+
+# Total population
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, FEMALE == 0 | FEMALE == 1)))[1] +
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, FEMALE == 0 | FEMALE == 1)))[2]
+
+# Admissions with status epilepticus
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1)))[1] +
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1)))[2]
+
+# Admissions with non-refractory status epilepticus
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))[1] +
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))[2]
+
+# Admissions with refractory SE
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))[1] +
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))[2]
+
+# Admissions with super-refractory SE
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))[1] +
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))[2]
+```
+
+
+
+
+Demographic and clinical characteristics for the total population with status epilepticus
+```{r}
+## HOSPITAL
+# Bedsize
+round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1))))
+
+# Hospital region
+round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1))))
+
+## ADMISSION
+# Emergency department admission
+round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1))))
+
+# Elective admission
+round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1))))
+
+# Admission weekend
+round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1))))
+
+## DEMOGRAPHICS
+# Race
+round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1))))
+
+# Income
+round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1))))
+
+# Primary payer: private insurance
+round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1))))
+
+## CLINICAL CHARACTERISTICS
+# Age
+svymean(~ AGE, subset(NIS2016survey, SE == 1), na.rm = TRUE)
+svyquantile(~ AGE, subset(NIS2016survey, SE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Sex
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1))))
+
+# Severity of disease
+round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1))))
+
+# Mortality risk
+round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1))))
+
+## CLINICAL OUTCOMES
+# Length of stay in days (0 means same day discharge)
+svymean(~ LOS, subset(NIS2016survey, SE == 1), na.rm = TRUE)
+svyquantile(~ LOS, subset(NIS2016survey, SE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Death
+round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1))))
+```
+
+
+
+
+Demographic and clinical characteristics for the population with non-refractory status epilepticus
+```{r}
+## HOSPITAL
+# Bedsize
+round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Hospital region
+round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+## ADMISSION
+# Emergency department admission
+round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Elective admission
+round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Admission weekend
+round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+## DEMOGRAPHICS
+# Race
+round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Income
+round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Primary payer: private insurance
+round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+## CLINICAL CHARACTERISTICS
+# Age
+svymean(~ AGE, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0), na.rm = TRUE)
+svyquantile(~ AGE, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Sex
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Severity of disease
+round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Mortality risk
+round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+## CLINICAL OUTCOMES
+# Length of stay in days (0 means same day discharge)
+svymean(~ LOS, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0), na.rm = TRUE)
+svyquantile(~ LOS, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Death
+round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+```
+
+
+
+
+
+Demographic and clinical characteristics for the population with refractory status epilepticus
+```{r}
+## HOSPITAL
+# Bedsize
+round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Hospital region
+round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+## ADMISSION
+# Emergency department admission
+round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Elective admission
+round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Admission weekend
+round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+## DEMOGRAPHICS
+# Race
+round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Income
+round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Primary payer: private insurance
+round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+## CLINICAL CHARACTERISTICS
+# Age
+svymean(~ AGE, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0), na.rm = TRUE)
+svyquantile(~ AGE, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Sex
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Severity of disease
+round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Mortality risk
+round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+## CLINICAL OUTCOMES
+# Length of stay in days (0 means same day discharge)
+svymean(~ LOS, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0), na.rm = TRUE)
+svyquantile(~ LOS, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Death
+round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+```
+
+
+
+
+Demographic and clinical characteristics for the population with super-refractory status epilepticus
+```{r}
+## HOSPITAL
+# Bedsize
+round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(HOSP_BEDSIZE), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+# Hospital region
+round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(HOSP_REGION), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+## ADMISSION
+# Emergency department admission
+round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(EDrecords), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+# Elective admission
+round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(ELECTIVE), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+# Admission weekend
+round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(AWEEKEND), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+## DEMOGRAPHICS
+# Race
+round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(race_dichotomized), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+# Income
+round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(high_income), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+# Primary payer: private insurance
+round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(private_insurance), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+## CLINICAL CHARACTERISTICS
+# Age
+svymean(~ AGE, subset(NIS2016survey, SE == 1 & ventmore96h == 1), na.rm = TRUE)
+svyquantile(~ AGE, subset(NIS2016survey, SE == 1 & ventmore96h == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Sex
+round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(FEMALE), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+# Severity of disease
+round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(majorextremeseverity), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+# Mortality risk
+round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(majorextrememortalityrisk), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+
+## CLINICAL OUTCOMES
+# Length of stay in days (0 means same day discharge)
+svymean(~ LOS, subset(NIS2016survey, SE == 1 & ventmore96h == 1), na.rm = TRUE)
+svyquantile(~ LOS, subset(NIS2016survey, SE == 1 & ventmore96h == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Death
+round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(DIED), subset(NIS2016survey, SE == 1 & ventmore96h == 1))))
+```
+
+
+
+
+
+
+
+
+## 5. Main outcome: cost
+
+
+
+
+Cost for the total population with status epilepticus
+```{r}
+## PRIMARY OUTCOME
+# Cost
+svymean(~ COST, subset(NIS2016survey, SE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by hospital bedsize
+svymean(~ COST, subset(NIS2016survey, SE == 1 & HOSP_BEDSIZE == "Small"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & HOSP_BEDSIZE == "Small"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & HOSP_BEDSIZE == "Medium"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & HOSP_BEDSIZE == "Medium"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & HOSP_BEDSIZE == "Large"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & HOSP_BEDSIZE == "Large"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by emergency department admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & EDrecords == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & EDrecords == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & EDrecords == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & EDrecords == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by whether status epilepticus developed during elective admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ELECTIVE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ELECTIVE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ELECTIVE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ELECTIVE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by primary payer
+svymean(~ COST, subset(NIS2016survey, SE == 1 & private_insurance == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & private_insurance == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & private_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by sex
+svymean(~ COST, subset(NIS2016survey, SE == 1 & FEMALE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & FEMALE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & FEMALE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & FEMALE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by disease severity
+svymean(~ COST, subset(NIS2016survey, SE == 1 & majorextremeseverity == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & majorextremeseverity == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & majorextremeseverity == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & majorextremeseverity == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by mortality risk
+svymean(~ COST, subset(NIS2016survey, SE == 1 & majorextrememortalityrisk == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & majorextrememortalityrisk == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & majorextrememortalityrisk == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & majorextrememortalityrisk == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+```
+
+
+
+
+Cost for the population with non-refractory status epilepticus
+```{r}
+## PRIMARY OUTCOME
+# Cost
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by hospital bedsize
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & HOSP_BEDSIZE == "Small"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & HOSP_BEDSIZE == "Small"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & HOSP_BEDSIZE == "Medium"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & HOSP_BEDSIZE == "Medium"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & HOSP_BEDSIZE == "Large"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & HOSP_BEDSIZE == "Large"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by emergency department admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & EDrecords == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & EDrecords == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & EDrecords == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & EDrecords == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by whether status epilepticus developed during an elective admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & ELECTIVE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & ELECTIVE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & ELECTIVE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & ELECTIVE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by primary payer
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & private_insurance == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & private_insurance == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & private_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by sex
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & FEMALE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & FEMALE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & FEMALE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & FEMALE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by disease severity
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextremeseverity == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextremeseverity == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextremeseverity == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextremeseverity == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by mortality risk
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextrememortalityrisk == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextrememortalityrisk == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextrememortalityrisk == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & majorextrememortalityrisk == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+```
+
+
+
+
+Cost for the population with refractory status epilepticus
+```{r}
+## PRIMARY OUTCOME
+# Cost
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by hospital bedsize
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & HOSP_BEDSIZE == "Small"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & HOSP_BEDSIZE == "Small"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & HOSP_BEDSIZE == "Medium"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & HOSP_BEDSIZE == "Medium"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & HOSP_BEDSIZE == "Large"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & HOSP_BEDSIZE == "Large"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by emergency department admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & EDrecords == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & EDrecords == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & EDrecords == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & EDrecords == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by whether status epilepticus developed during elective admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & ELECTIVE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & ELECTIVE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & ELECTIVE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & ELECTIVE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by primary payer
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & private_insurance == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & private_insurance == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & private_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by sex
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & FEMALE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & FEMALE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & FEMALE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & FEMALE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by disease severity
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextremeseverity == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextremeseverity == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextremeseverity == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextremeseverity == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by mortality risk
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextrememortalityrisk == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextrememortalityrisk == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextrememortalityrisk == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & majorextrememortalityrisk == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+```
+
+
+
+
+Cost for the population with super-refractory status epilepticus
+```{r}
+## PRIMARY OUTCOME
+# Cost
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by hospital bedsize
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & HOSP_BEDSIZE == "Small"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & HOSP_BEDSIZE == "Small"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & HOSP_BEDSIZE == "Medium"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & HOSP_BEDSIZE == "Medium"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & HOSP_BEDSIZE == "Large"), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & HOSP_BEDSIZE == "Large"), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by emergency department admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & EDrecords == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & EDrecords == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & EDrecords == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & EDrecords == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by whether status epilepticus developed during an elective admission
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & ELECTIVE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & ELECTIVE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+#svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & ELECTIVE == 1), na.rm = TRUE)
+#svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & ELECTIVE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by primary payer
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & private_insurance == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & private_insurance == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & private_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by sex
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & FEMALE == 0), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & FEMALE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & FEMALE == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & FEMALE == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by disease severity
+#svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextremeseverity == 0), na.rm = TRUE)
+#svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextremeseverity == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextremeseverity == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextremeseverity == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+# Cost by disease severity
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextrememortalityrisk == 0), na.rm = TRUE) 
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextrememortalityrisk == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextrememortalityrisk == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(NIS2016survey, SE == 1 & ventmore96h == 1 & majorextrememortalityrisk == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+```
+
+
+
+
+
+
+
+
+## 6. Perform linear regression to evaluate factors associated with cost
+
+
+
+
+Linear regression
+```{r}
+# Regression
+NIS2016_regression <- svyglm(COST ~ AGE + FEMALE + AWEEKEND + HOSP_REGION + HOSP_BEDSIZE + EDrecords + ELECTIVE +
+                               AWEEKEND + private_insurance + race_dichotomized + high_income + LOS +
+                               majorextremeseverity + majorextrememortalityrisk, 
+                             design = NIS2016survey)
+summary(NIS2016_regression)
+```
+
+
+
+
+
+
+
+
+
+
+

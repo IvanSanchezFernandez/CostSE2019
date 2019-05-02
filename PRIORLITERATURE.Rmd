@@ -1,0 +1,436 @@
+
+# COMPARISON WITH PRIOR LITERATURE
+
+
+
+
+
+
+
+
+Include needed packages
+```{r}
+# install.packages("tidyverse")
+library(tidyverse)
+
+# install.packages("plotly")
+library(plotly)
+```
+
+
+
+
+Load database
+```{r}
+prior_literature <- read.csv("I:\\PROJECTS\\Cost of Status Epilepticus\\Priorliterature.csv", header=TRUE)
+prior_literature[1:5, 1:5]
+```
+
+
+
+
+Inflation factor to 2019 dollars (from the Bureau of Labor Statistics)
+```{r}
+i2016to2019 <- 1.06
+i2012to2019 <- 1.11
+i2011to2019 <- 1.14
+i2010to2019 <- 1.16
+i2009to2019 <- 1.19
+i2008to2019 <- 1.19
+i2007to2019 <- 1.24
+```
+
+
+
+
+Create dataframe for KID with 2019 USA dollar estimations
+```{r}
+KID <- data.frame(type <- c("All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE"),
+                  cost2019 <- c(prior_literature$Median[1]*i2016to2019, prior_literature$p25[1]*i2016to2019, prior_literature$p75[1]*i2016to2019,
+                                prior_literature$NRSEMedian[1]*i2016to2019, prior_literature$NRSEp25[1]*i2016to2019, prior_literature$NRSEp75[1]*i2016to2019,
+                                prior_literature$RSEMedian[1]*i2016to2019, prior_literature$RSEp25[1]*i2016to2019, prior_literature$RSEp75[1]*i2016to2019,
+                                prior_literature$SRSEMedian[1]*i2016to2019, prior_literature$SRSEp25[1]*i2016to2019, prior_literature$SRSEp75[1]*i2016to2019,
+                                prior_literature$Median[2]*i2012to2019, prior_literature$p25[2]*i2012to2019, prior_literature$p75[2]*i2012to2019,
+                                prior_literature$NRSEMedian[2]*i2012to2019, prior_literature$NRSEp25[2]*i2012to2019, prior_literature$NRSEp75[2]*i2012to2019,
+                                prior_literature$RSEMedian[2]*i2012to2019, prior_literature$RSEp25[2]*i2012to2019, prior_literature$RSEp75[2]*i2012to2019,
+                                prior_literature$SRSEMedian[2]*i2012to2019, prior_literature$SRSEp25[2]*i2012to2019, prior_literature$SRSEp75[2]*i2012to2019,
+                                prior_literature$Median[3]*i2009to2019, prior_literature$p25[3]*i2009to2019, prior_literature$p75[3]*i2009to2019,
+                                prior_literature$NRSEMedian[3]*i2009to2019, prior_literature$NRSEp25[3]*i2009to2019, prior_literature$NRSEp75[3]*i2009to2019,
+                                prior_literature$RSEMedian[3]*i2009to2019, prior_literature$RSEp25[3]*i2009to2019, prior_literature$RSEp75[3]*i2009to2019,
+                                prior_literature$SRSEMedian[3]*i2009to2019, prior_literature$SRSEp25[3]*i2009to2019, prior_literature$SRSEp75[3]*i2009to2019))
+colnames(KID) <- c("type", "cost2019")
+```
+
+
+
+
+Create plot for KID with 2019 USA dollar estimations
+```{r}
+# All categories
+KIDplot <- ggplot(aes(x=type, y=cost2019), data=KID) + geom_point(color=c("darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink"),
+                                                          size=c(10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3),
+                                                          shape=c(19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18),
+                                                          alpha=c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4)) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                     axis.text.x = element_text(face = "bold", size = 10),
+                     axis.text.y = element_text(face = "bold", size = 10),
+                     axis.title.x = element_text(face = "bold", size = 14),
+                     axis.title.y = element_text(face = "bold", size = 14),
+                     panel.border = element_blank(),
+                     legend.title = element_blank()) +
+  scale_x_discrete(limits=c("NRSE", "RSE", "SRSE", "All SE")) +
+  scale_y_continuous(limits = c(0, 250000)) +
+  xlab("Type of Status Epilepticus") + ylab("Cost (in 2019 USA dollars)")
+KIDplot # Regular plot
+ggplotly(KIDplot) # Interactive plot
+
+# Without SRSE
+KIDplotwithoutSRSE <- ggplot(aes(x=type, y=cost2019), data=KID[KID$type=="All SE" | KID$type=="NRSE" | KID$type=="RSE", ]) + geom_point(color=c(                                                       "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink"),
+                                                          size=c(10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3),
+                                                          shape=c(19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18),
+                                                          alpha=c(1, 1, 1, 1, 1, 1, 1, 1, 1, 
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4)) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                     axis.text.x = element_text(face = "bold", size = 10),
+                     axis.text.y = element_text(face = "bold", size = 10),
+                     axis.title.x = element_text(face = "bold", size = 14),
+                     axis.title.y = element_text(face = "bold", size = 14),
+                     panel.border = element_blank(),
+                     legend.title = element_blank()) +
+  scale_x_discrete(limits=c("NRSE", "RSE", "All SE")) +
+  scale_y_continuous(limits = c(0, 25000)) +
+  xlab("Type of Status Epilepticus") + ylab("Cost (in 2019 USA dollars)")
+KIDplotwithoutSRSE # Regular plot
+ggplotly(KIDplotwithoutSRSE) # Interactive plot
+```
+
+
+
+
+Create dataframe for NIS with 2019 USA dollar estimations
+```{r}
+NIS <- data.frame(type <- c("All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE",
+                            "All SE", "All SE", "All SE",
+                            "NRSE", "NRSE", "NRSE",
+                            "RSE", "RSE", "RSE",
+                            "SRSE", "SRSE", "SRSE"),
+                  cost2019 <- c(prior_literature$Median[4]*i2016to2019, prior_literature$p25[4]*i2016to2019, prior_literature$p75[4]*i2016to2019,
+                                prior_literature$NRSEMedian[4]*i2016to2019, prior_literature$NRSEp25[4]*i2016to2019, prior_literature$NRSEp75[4]*i2016to2019,
+                                prior_literature$RSEMedian[4]*i2016to2019, prior_literature$RSEp25[4]*i2016to2019, prior_literature$RSEp75[4]*i2016to2019,
+                                prior_literature$SRSEMedian[4]*i2016to2019, prior_literature$SRSEp25[4]*i2016to2019, prior_literature$SRSEp75[4]*i2016to2019,
+                                prior_literature$Median[5]*i2012to2019, prior_literature$p25[5]*i2012to2019, prior_literature$p75[5]*i2012to2019,
+                                prior_literature$NRSEMedian[5]*i2012to2019, prior_literature$NRSEp25[5]*i2012to2019, prior_literature$NRSEp75[5]*i2012to2019,
+                                prior_literature$RSEMedian[5]*i2012to2019, prior_literature$RSEp25[5]*i2012to2019, prior_literature$RSEp75[5]*i2012to2019,
+                                prior_literature$SRSEMedian[5]*i2012to2019, prior_literature$SRSEp25[5]*i2012to2019, prior_literature$SRSEp75[5]*i2012to2019,
+                                prior_literature$Median[6]*i2011to2019, prior_literature$p25[6]*i2011to2019, prior_literature$p75[6]*i2011to2019,
+                                prior_literature$NRSEMedian[6]*i2011to2019, prior_literature$NRSEp25[6]*i2011to2019, prior_literature$NRSEp75[6]*i2011to2019,
+                                prior_literature$RSEMedian[6]*i2011to2019, prior_literature$RSEp25[6]*i2011to2019, prior_literature$RSEp75[6]*i2011to2019,
+                                prior_literature$SRSEMedian[6]*i2011to2019, prior_literature$SRSEp25[6]*i2011to2019, prior_literature$SRSEp75[6]*i2011to2019,
+                                prior_literature$Median[7]*i2010to2019, prior_literature$p25[7]*i2010to2019, prior_literature$p75[7]*i2010to2019,
+                                prior_literature$NRSEMedian[7]*i2010to2019, prior_literature$NRSEp25[7]*i2010to2019, prior_literature$NRSEp75[7]*i2010to2019,
+                                prior_literature$RSEMedian[7]*i2010to2019, prior_literature$RSEp25[7]*i2010to2019, prior_literature$RSEp75[7]*i2010to2019,
+                                prior_literature$SRSEMedian[7]*i2010to2019, prior_literature$SRSEp25[7]*i2010to2019, prior_literature$SRSEp75[7]*i2010to2019,
+                                prior_literature$Median[8]*i2009to2019, prior_literature$p25[8]*i2009to2019, prior_literature$p75[8]*i2009to2019,
+                                prior_literature$NRSEMedian[8]*i2009to2019, prior_literature$NRSEp25[8]*i2009to2019, prior_literature$NRSEp75[8]*i2009to2019,
+                                prior_literature$RSEMedian[8]*i2009to2019, prior_literature$RSEp25[8]*i2009to2019, prior_literature$RSEp75[8]*i2009to2019,
+                                prior_literature$SRSEMedian[8]*i2009to2019, prior_literature$SRSEp25[8]*i2009to2019, prior_literature$SRSEp75[8]*i2009to2019,
+                                prior_literature$Median[9]*i2008to2019, prior_literature$p25[9]*i2008to2019, prior_literature$p75[9]*i2008to2019,
+                                prior_literature$NRSEMedian[9]*i2008to2019, prior_literature$NRSEp25[9]*i2008to2019, prior_literature$NRSEp75[9]*i2008to2019,
+                                prior_literature$RSEMedian[9]*i2008to2019, prior_literature$RSEp25[9]*i2008to2019, prior_literature$RSEp75[9]*i2008to2019,
+                                prior_literature$SRSEMedian[9]*i2008to2019, prior_literature$SRSEp25[9]*i2008to2019, prior_literature$SRSEp75[9]*i2008to2019,
+                                prior_literature$Median[10]*i2007to2019, prior_literature$p25[10]*i2007to2019, prior_literature$p75[10]*i2007to2019,
+                                prior_literature$NRSEMedian[10]*i2007to2019, prior_literature$NRSEp25[10]*i2007to2019, prior_literature$NRSEp75[10]*i2007to2019,
+                                prior_literature$RSEMedian[10]*i2007to2019, prior_literature$RSEp25[10]*i2007to2019, prior_literature$RSEp75[10]*i2007to2019,
+                                prior_literature$SRSEMedian[10]*i2007to2019, prior_literature$SRSEp25[10]*i2007to2019, prior_literature$SRSEp75[10]*i2007to2019))
+colnames(NIS) <- c("type", "cost2019")
+```
+
+
+
+
+Create plot for NIS with 2019 USA dollar estimations
+```{r}
+# All categories
+NISplot <- ggplot(aes(x=type, y=cost2019), data=NIS) + geom_point(color=c("darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "darkturquoise", "darkturquoise", "darkturquoise",
+                                                                          "darkturquoise", "darkturquoise", "darkturquoise",
+                                                                          "darkturquoise", "darkturquoise", "darkturquoise",
+                                                                          "darkturquoise", "darkturquoise", "darkturquoise",
+                                                                          "blue", "blue", "blue",
+                                                                          "blue", "blue", "blue",
+                                                                          "blue", "blue", "blue",
+                                                                          "blue", "blue", "blue",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "firebrick", "firebrick", "firebrick",
+                                                                          "firebrick", "firebrick", "firebrick",
+                                                                          "firebrick", "firebrick", "firebrick",
+                                                                          "firebrick", "firebrick", "firebrick",
+                                                                          "darkgoldenrod", "darkgoldenrod", "darkgoldenrod",
+                                                                          "darkgoldenrod", "darkgoldenrod", "darkgoldenrod",
+                                                                          "darkgoldenrod", "darkgoldenrod", "darkgoldenrod",
+                                                                          "darkgoldenrod", "darkgoldenrod", "darkgoldenrod"),
+                                                          size=c(10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3),
+                                                          shape=c(19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18),
+                                                          alpha=c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4)) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                     axis.text.x = element_text(face = "bold", size = 10),
+                     axis.text.y = element_text(face = "bold", size = 10),
+                     axis.title.x = element_text(face = "bold", size = 14),
+                     axis.title.y = element_text(face = "bold", size = 14),
+                     panel.border = element_blank(),
+                     legend.title = element_blank()) +
+  scale_x_discrete(limits=c("NRSE", "RSE", "SRSE", "All SE")) +
+  scale_y_continuous(limits = c(0, 95000), breaks=c(0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000)) +
+  xlab("Type of Status Epilepticus") + ylab("Cost (in 2019 USA dollars)")
+NISplot # Regular plot
+ggplotly(NISplot) # Interactive plot
+
+# Without SRSE
+NISplotwithoutSRSE <- ggplot(aes(x=type, y=cost2019), data=NIS[NIS$type=="All SE" | NIS$type=="NRSE" | NIS$type=="RSE", ]) + geom_point(color=c(                                                       "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "darkgreen", "darkgreen", "darkgreen",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "orange", "orange", "orange",
+                                                                          "darkturquoise", "darkturquoise", "darkturquoise",
+                                                                          "darkturquoise", "darkturquoise", "darkturquoise",
+                                                                          "darkturquoise", "darkturquoise", "darkturquoise",
+                                                                          "blue", "blue", "blue",
+                                                                          "blue", "blue", "blue",
+                                                                          "blue", "blue", "blue",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "pink", "pink", "pink",
+                                                                          "firebrick", "firebrick", "firebrick",
+                                                                          "firebrick", "firebrick", "firebrick",
+                                                                          "firebrick", "firebrick", "firebrick",
+                                                                          "darkgoldenrod", "darkgoldenrod", "darkgoldenrod",
+                                                                          "darkgoldenrod", "darkgoldenrod", "darkgoldenrod",
+                                                                          "darkgoldenrod", "darkgoldenrod", "darkgoldenrod"),
+                                                          size=c(10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 10, 5, 5,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3,
+                                                                 6, 3, 3),
+                                                          shape=c(19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18,
+                                                                  19, 18, 18),
+                                                          alpha=c(1, 1, 1, 1, 1, 1, 1, 1, 1, 
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
+                                                                  0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4)) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                     axis.text.x = element_text(face = "bold", size = 10),
+                     axis.text.y = element_text(face = "bold", size = 10),
+                     axis.title.x = element_text(face = "bold", size = 14),
+                     axis.title.y = element_text(face = "bold", size = 14),
+                     panel.border = element_blank(),
+                     legend.title = element_blank()) +
+  scale_x_discrete(limits=c("NRSE", "RSE", "All SE")) +
+  scale_y_continuous(limits = c(0, 35000)) +
+  xlab("Type of Status Epilepticus") + ylab("Cost (in 2019 USA dollars)")
+NISplotwithoutSRSE # Regular plot
+ggplotly(NISplotwithoutSRSE) # Interactive plot
+```
+
