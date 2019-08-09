@@ -312,6 +312,13 @@ KID2016$majorextrememortalityrisk[KID2016$APRDRG_Risk_Mortality == "Major" | KID
 KID2016$private_insurance <- 0
 KID2016$private_insurance[KID2016$PAY1 == "Private insurance"] <- 1
 
+KID2016$public_insurance <- 0
+KID2016$public_insurance[KID2016$PAY1 == "Medicare" | KID2016$PAY1 == "Medicaid"] <- 1
+
+KID2016$other_insurance <- 0
+KID2016$other_insurance[KID2016$PAY1 == "Self-pay" | KID2016$PAY1 == "No charge" | KID2016$PAY1 == "Other"] <- 1
+
+
 # Cost
 KID2016$COST <- ifelse(KID2016$COST >= 0, KID2016$COST, NA)
 ```
@@ -500,6 +507,14 @@ prop.table(round(svytable(~ as.character(high_income), subset(KID2016survey, SE 
 round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1)))
 prop.table(round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1))))
 
+# Primary payer: Medicare or Medicaid
+round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1))))
+
+# Primary payer: Other
+round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1)))
+prop.table(round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1))))
+
 ## CLINICAL CHARACTERISTICS
 # Age
 svymean(~ AGE, subset(KID2016survey, SE == 1), na.rm = TRUE)
@@ -566,6 +581,14 @@ prop.table(round(svytable(~ as.character(high_income), subset(KID2016survey, SE 
 # Primary payer: private insurance
 round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
 prop.table(round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Primary payer: Medicare or Medicaid
+round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
+
+# Primary payer: Other
+round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0))))
 
 ## CLINICAL CHARACTERISTICS
 # Age
@@ -635,6 +658,14 @@ prop.table(round(svytable(~ as.character(high_income), subset(KID2016survey, SE 
 round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
 prop.table(round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
 
+# Primary payer: Medicare or Medicaid
+round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
+# Primary payer: Other
+round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0)))
+prop.table(round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0))))
+
 ## CLINICAL CHARACTERISTICS
 # Age
 svymean(~ AGE, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0), na.rm = TRUE)
@@ -701,6 +732,14 @@ prop.table(round(svytable(~ as.character(high_income), subset(KID2016survey, SE 
 # Primary payer: private insurance
 round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1 & ventmore96h == 1)))
 prop.table(round(svytable(~ as.character(private_insurance), subset(KID2016survey, SE == 1 & ventmore96h == 1))))
+
+# Primary payer: Medicare or Medicaid
+round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(public_insurance), subset(KID2016survey, SE == 1 & ventmore96h == 1))))
+
+# Primary payer: Other
+round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1 & ventmore96h == 1)))
+prop.table(round(svytable(~ as.character(other_insurance), subset(KID2016survey, SE == 1 & ventmore96h == 1))))
 
 ## CLINICAL CHARACTERISTICS
 # Age
@@ -779,6 +818,12 @@ svyquantile(~ COST, subset(KID2016survey, SE == 1 & private_insurance == 0), c(0
 svymean(~ COST, subset(KID2016survey, SE == 1 & private_insurance == 1), na.rm = TRUE)
 svyquantile(~ COST, subset(KID2016survey, SE == 1 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
 
+svymean(~ COST, subset(KID2016survey, SE == 1 & public_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & public_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(KID2016survey, SE == 1 & other_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & other_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
 # Cost by sex
 svymean(~ COST, subset(KID2016survey, SE == 1 & FEMALE == 0), na.rm = TRUE)
 svyquantile(~ COST, subset(KID2016survey, SE == 1 & FEMALE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
@@ -841,6 +886,12 @@ svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore9
 
 svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & private_insurance == 1), na.rm = TRUE)
 svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & public_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & public_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & other_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & other_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
 
 # Cost by sex
 svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 0 & ventmore96h == 0 & FEMALE == 0), na.rm = TRUE)
@@ -905,6 +956,12 @@ svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore9
 svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & private_insurance == 1), na.rm = TRUE)
 svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
 
+svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & public_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & public_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & other_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & other_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
 # Cost by sex
 svymean(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & FEMALE == 0), na.rm = TRUE)
 svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventupto96h == 1 & ventmore96h == 0 & FEMALE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
@@ -968,6 +1025,12 @@ svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & private_i
 svymean(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & private_insurance == 1), na.rm = TRUE)
 svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & private_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
 
+svymean(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & public_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & public_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
+svymean(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & other_insurance == 1), na.rm = TRUE)
+svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & other_insurance == 1), c(0.25, 0.5, 0.75), na.rm = TRUE)
+
 # Cost by sex
 svymean(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & FEMALE == 0), na.rm = TRUE)
 svyquantile(~ COST, subset(KID2016survey, SE == 1 & ventmore96h == 1 & FEMALE == 0), c(0.25, 0.5, 0.75), na.rm = TRUE)
@@ -1006,7 +1069,7 @@ Linear regression
 ```{r}
 # Regression
 KID2016_regression <- svyglm(COST ~ AGE + FEMALE + AWEEKEND + HOSP_REGION + HOSP_BEDSIZE + EDrecords + ELECTIVE +
-                               AWEEKEND + private_insurance + race_dichotomized + high_income + LOS +
+                               AWEEKEND + private_insurance + other_insurance + race_dichotomized + high_income + LOS +
                                majorextremeseverity + majorextrememortalityrisk, 
                              design = KID2016survey)
 summary(KID2016_regression)
